@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import ImagePicker from 'react-native-image-picker';
 
-
 export default function App() {
   const [restaurants, setRestaurants] = useState([
     {
@@ -38,33 +37,69 @@ export default function App() {
     description: '',
     tags: '',
     rating: 0,
+    imageUrl: null,
   });
 
   const [isFormVisible, setIsFormVisible] = useState(false);
 
+  const handleDeleteRestaurant = (key) => {
+    setRestaurants((prevRestaurants) =>
+      prevRestaurants.filter((restaurant) => restaurant.key !== key)
+    );
+  };
+
+  const handleEditRestaurant = (restaurant) => {
+    setNewRestaurant({
+      name: restaurant.name,
+      address: restaurant.address,
+      description: restaurant.description,
+      tags: restaurant.tags,
+      rating: restaurant.rating,
+      imageUrl: null,
+    });
+    setRestaurants((prevRestaurants) =>
+      prevRestaurants.filter((item) => item.key !== restaurant.key)
+    );
+    setIsFormVisible(true);
+  };
+
   const addRestaurant = () => {
+    if (newRestaurant.name.trim() === '' || newRestaurant.address.trim() === '') {
+      alert('Name and Address are required.');
+      return;
+    }
+
+    if (restaurants.some((item) => item.name === newRestaurant.name)) {
+      alert('Restaurant with this name already exists.');
+      return;
+    }
+
+    setRestaurants((prevRestaurants) => [
+      ...prevRestaurants,
+      {
+        key: prevRestaurants.length + 1,
+        ...newRestaurant,
+        imageUrl: newRestaurant.imageUrl || 'https://via.placeholder.com/50',
+      },
+    ]);
+    setNewRestaurant({
+      name: '',
+      address: '',
+      description: '',
+      tags: '',
+      rating: 0,
+      imageUrl: null,
+    });
+    setIsFormVisible(false);
+  };
+
+  const pickImage = () => {
     ImagePicker.showImagePicker({ title: 'Select Image' }, (response) => {
       if (!response.didCancel && !response.error) {
-        setRestaurants((prevRestaurants) => [
-          ...prevRestaurants,
-          {
-            key: prevRestaurants.length + 1,
-            ...newRestaurant,
-            imageUrl: response.uri,
-          },
-        ]);
-        setNewRestaurant({
-          name: '',
-          address: '',
-          description: '',
-          tags: '',
-          rating: 0,
-        });
-        setIsFormVisible(false);
+        setNewRestaurant((prevRestaurant) => ({ ...prevRestaurant, imageUrl: response.uri }));
       }
     });
   };
-  
 
   return (
     <View style={styles.container}>
@@ -79,12 +114,26 @@ export default function App() {
         renderItem={({ item }) => (
           <View style={styles.listItem}>
             <Image
-              source={{ uri: 'https://via.placeholder.com/50' }} // Placeholder image URL
+              source={{ uri: item.imageUrl || 'https://via.placeholder.com/50' }}
               style={styles.thumbnail}
             />
             <View style={styles.detailsContainer}>
               <Text style={styles.listTitle}>{item.name}</Text>
               <Text style={styles.listAddress}>{item.address}</Text>
+            </View>
+            <View style={styles.buttonsContainer}>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => handleEditRestaurant(item)}
+              >
+                <Text style={styles.buttonText}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDeleteRestaurant(item.key)}
+              >
+                <Text style={styles.buttonText}>Delete</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -127,6 +176,15 @@ export default function App() {
             value={newRestaurant.rating.toString()}
             onChangeText={(text) => setNewRestaurant({ ...newRestaurant, rating: parseFloat(text) })}
           />
+          <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+            <Text style={styles.buttonText}>Pick an Image</Text>
+          </TouchableOpacity>
+          {newRestaurant.imageUrl && (
+            <Image
+              source={{ uri: newRestaurant.imageUrl }}
+              style={{ width: 200, height: 200, marginBottom: 10 }}
+            />
+          )}
           <TouchableOpacity style={styles.addButton} onPress={addRestaurant}>
             <Text style={styles.buttonText}>Add Restaurant</Text>
           </TouchableOpacity>
@@ -139,34 +197,36 @@ export default function App() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    padding: 20,
   },
   headerContainer: {
-    paddingTop: 40,
-    paddingLeft: 20,
-    paddingBottom: 10,
-    marginBottom: 10,
+    alignItems: 'center',
+    marginBottom: 20,
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#333', // Adjusted color to be less intense
   },
   headerSub: {
-    marginTop: 0,
-    padding: 0,
     fontSize: 15,
     fontStyle: 'italic',
     fontWeight: '300',
+    color: '#777', // Adjusted color to be less intense
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
+    justifyContent: 'space-between', // Adjusted to match the second set
+    marginBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'white',
+    borderBottomColor: '#ddd', // Adjusted color to be less intense
+    paddingVertical: 10, // Adjusted padding
   },
   thumbnail: {
     width: 50,
@@ -180,11 +240,33 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#333', // Adjusted color to be less intense
   },
   listAddress: {
     fontSize: 14,
-    color: 'white',
+    color: '#777', // Adjusted color to be less intense
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editButton: {
+    backgroundColor: '#3498db', // Adjusted color to be more in line with the second set
+    padding: 10,
+    marginRight: 10,
+    borderRadius: 5, // Added border radius for a more rounded look
+  },
+  deleteButton: {
+    backgroundColor: '#e74c3c', // Adjusted color to be more in line with the second set
+    padding: 10,
+    borderRadius: 5, // Added border radius for a more rounded look
+  },
+  addButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 20,
   },
   formContainer: {
     flex: 1,
@@ -194,26 +276,18 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#ddd', // Adjusted color to be less intense
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
-    width: '100%',
-  },
-  addButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 10,
+    width: '80%',
   },
   closeButton: {
     backgroundColor: '#f44336',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
-    width: '100%',
+    marginTop: 10,
   },
   buttonText: {
     color: 'white',
