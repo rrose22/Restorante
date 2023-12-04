@@ -46,7 +46,7 @@ const HomeScreen = () => {
       if (
         !newRestaurant.name
       ) {
-        return;
+        return
       }
       else {
         setRestaurants((prevRestaurants) => [
